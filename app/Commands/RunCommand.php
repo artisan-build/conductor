@@ -46,7 +46,8 @@ class RunCommand extends Command
 
     protected function getBinaryName()
     {
-        $response = Http::get("https://packagist.org/packages/{$this->arguments()['package']}.json");
+        $package = $this->arguments()['package'];
+        $response = Http::get("https://packagist.org/packages/{$package}.json");
         $json = $response->json();
         $versions = $json['package']['versions'];
         $latest = $versions[array_keys($versions)[1]]; // [0] is `dev-master` or `dev-main`
