@@ -1,5 +1,5 @@
 <p align="center">
-    <img title="Conductor" height="400" src="https://github.com/artisan-build/conductor/tree/main/art/composer_conductor.webp" alt="Conductor Logo" />
+    <img title="Conductor" height="400" src="https://raw.githubusercontent.com/artisan-build/conductor/main/art/composer_conductor.webp" alt="Conductor Logo" />
 </p>
 
 <p align="center">
