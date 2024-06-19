@@ -19,7 +19,7 @@ class RunCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'run {package?} {thing?} {arguments?*} {--fake=false}';
+    protected $signature = 'run {package?} {thing?} {arguments?*} {--fake}';
 
     /**
      * The console command description.
@@ -38,7 +38,7 @@ class RunCommand extends Command
      */
     public function handle()
     {
-        if ((bool) $this->option('fake') === true) {
+        if ($this->option('fake')) {
             $this->info('fake = true');
             $this->fake = true;
         }
