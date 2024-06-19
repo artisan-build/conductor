@@ -1,11 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Conductor\Commands;
 
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Process;
+use Closure;
+use Conductor\Error;
+use Conductor\Services\Package;
 use LaravelZero\Framework\Commands\Command;
 use NunoMaduro\LaravelConsoleSummary\SummaryCommand;
+
+use function Laravel\Prompts\select;
 
 class RunCommand extends Command
 {
@@ -14,7 +19,7 @@ class RunCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'run {package?} {thing?} {argument?} {--option=*}';
+    protected $signature = 'run {package?} {thing?} {arguments?*} {--fake=false}';
 
     /**
      * The console command description.
@@ -24,44 +29,54 @@ class RunCommand extends Command
     protected $description = 'Install and run a composer package.';
 
     /**
+     * Whether or not to fake the actual execution of the command.
+     */
+    public readonly bool $fake;
+
+    /**
      * Execute the console command.
      */
     public function handle()
     {
+        if ($this->option('fake')) {
+            $this->info('fake = true');
+            $this->fake = true;
+        }
+
         // TODO
         // check if conductor is latest version...
 
-        if (! $this->arguments()['package']) {
+        if (! $this->argument('package')) {
             $this->call(SummaryCommand::class);
 
             return;
         }
 
-        $package = $this->arguments()['package'];
-        $package_data = $this->getLatestPackageData($package);
-        $keywords = $package_data['keywords'];
-        $binary = $this->getBinaryName($package_data);
-        $command = $this->arguments()['thing'];
-        $arguments = $this->arguments()['argument'];
+        $package = Package::fromName($this->argument('package'));
+        if ($package instanceof Error) {
+            $this->error($package->message);
 
-        if ($this->packageIsInstalledLocally($package)) {
-            $this->info('package is already installed locally. running...');
-            $cmd = "vendor/bin/{$binary} {$command} {$arguments}";
-            $result = Process::forever()->tty()->run($cmd);
-
-            return $result->exitCode();
+            return self::FAILURE;
         }
 
-        if ($this->packageIsInstalledGlobally($package)) {
-            $this->info('package is already installed globally. running...');
-            $cmd = "{$binary} {$command} {$arguments}";
-            $result = Process::forever()->tty()->run($cmd);
+        $binary = $this->selectBinary($package);
+        $command = $this->argument('thing');
+        $arguments = $this->argument('arguments');
 
-            return $result->exitCode();
+        if ($package->isInstalledLocally()) {
+            $this->info('package is already installed locally. running...');
+
+            return $package->run($binary, $command, $arguments, Package::LOCALLY);
+        }
+
+        if ($package->isInstalledGlobally()) {
+            $this->info('package is already installed globally. running...');
+
+            return $package->run($binary, $command, $arguments, Package::GLOBALLY);
         }
 
         // TODO
-        $this->info('update globally installed package?..');
+        // $this->info('update globally installed package?..');
 
         $should_keep_package_installed = $this->confirm(
             question: 'keep package installed after running?..',
@@ -70,29 +85,19 @@ class RunCommand extends Command
 
         /**
          * Install package globally.
-         * 
-         * If the packages `keywords` property contains `dev`, `testing`, or `static analysis`,
-         * then add on `--dev` to the composer command. Save this to a variable for use in cleanup.
          */
         $this->info('installing package globally...');
-        $cmd = "composer global require {$package}";
-        if (collect(['dev', 'testing', 'static analysis'])->intersect($keywords)->isNotEmpty()) {
-            $cmd .= ' --dev';
-        }
-        $result = Process::forever()->tty()->run($cmd);
-        if ($result->exitCode() !== 0) {
+        $result = $package->installGlobally();
+        if ($result !== 0) {
             $this->error('failed to install package globally.');
-            return $result->exitCode();
+            return $result;
         }
 
         /**
-         * Run binary.
+         * Run binary and save the return code for later.
          */
         $this->info('running binary...');
-        $cmd = "{$binary} {$command} {$arguments}";
-        $result = Process::forever()->tty()->run($cmd);
-        // Save the return code for later.
-        $return = $result->exitCode();
+        $return = $package->run($binary, $command, $arguments, Package::GLOBALLY);
 
         /**
          * If the user wants to keep the package installed, then return the return code.
@@ -105,52 +110,31 @@ class RunCommand extends Command
          * Uninstall package globally.
          */
         $this->info('uninstalling package globally...');
-        $cmd = "composer global uninstall {$package}";
-        if (collect(['dev', 'testing', 'static analysis'])->intersect($keywords)->isNotEmpty()) {
-            $cmd .= ' --dev';
-        }
-        $result = Process::forever()->tty()->run($cmd);
-        if ($result->exitCode() !== 0) {
+        $result = $package->uninstallGlobally();
+        if ($result !== 0) {
             $this->error('failed to uninstall package globally.');
-            return $result->exitCode();
+            return $result;
         }
 
         // use the return code from earlier.
         return $return;
     }
 
-    protected function getLatestPackageData(string $package): array
+    protected function selectBinary(Package $package): string
     {
-        $response = Http::get("https://packagist.org/packages/{$package}.json");
-        $json = $response->json();
-        $versions = $json['package']['versions'];
-        $latest = $versions[array_keys($versions)[1]]; // [0] is `dev-master` or `dev-main`
+        $binary = is_string($package->binaries())
+            ? $package->binaries()
+            : select('select binary to run', $package->binaries());
 
-        return $latest;
+        return last(explode('/', $binary));
     }
 
-    protected function getBinaryName(array $latest_package_data): string
+    protected function if_faking(Closure $then, Closure $else): mixed
     {
-        $this->info('checking package for binary...');
-        $binary = $latest_package_data['bin'][0];
-        $bin = explode('/', $binary)[1];
+        if ($this->fake) {
+            return $then();
+        }
 
-        return $bin;
-    }
-
-    protected function packageIsInstalledLocally(string $package): bool
-    {
-        $this->info('checking for locally installed package...');
-        exec("composer show {$package} 2>&1", $output, $return_code);
-
-        return $return_code === 0;
-    }
-
-    protected function packageIsInstalledGlobally(string $package): bool
-    {
-        $this->info('checking for globally installed package...');
-        exec("composer global show {$package} 2>&1", $output, $return_code);
-
-        return $return_code === 0;
+        return $else();
     }
 }
