@@ -38,7 +38,7 @@ class RunCommand extends Command
      */
     public function handle()
     {
-        if ($this->option('fake')) {
+        if ((bool) $this->option('fake') === true) {
             $this->info('fake = true');
             $this->fake = true;
         }
