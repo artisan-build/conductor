@@ -109,11 +109,11 @@ class Package
 
     public function run(
         string $binary,
-        string $command,
-        array $arguments,
+        ?string $command,
+        ?array $arguments,
         string $context = self::GLOBALLY,
     ): int {
-        $arguments = implode(' ', $arguments);
+        $arguments = implode(' ', $arguments ?? []);
         $cmd = str(match($context) {
             self::GLOBALLY => 'composer global exec',
             self::LOCALLY => 'composer exec',
