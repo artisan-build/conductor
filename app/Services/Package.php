@@ -111,14 +111,19 @@ class Package
         string $binary,
         ?string $command,
         ?array $arguments,
+        ?array $options,
         string $context = self::GLOBALLY,
     ): int {
         $arguments = implode(' ', $arguments ?? []);
+        $options = collect($options)
+            ->prepend('') // this will add `-- ` before the first option
+            ->map(fn (string $option) => "--{$option}")
+            ->implode(' ');
         $cmd = str(match($context) {
             self::GLOBALLY => 'composer global exec',
             self::LOCALLY => 'composer exec',
             default => throw new Exception('invalid context'),
-        })->append(" {$binary} {$command} {$arguments}")->toString();
+        })->append(" {$binary} {$command} {$arguments} {$options}")->toString();
         $result = Process::forever()->tty()->run($cmd);
 
         return $result->exitCode();

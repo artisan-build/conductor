@@ -19,7 +19,7 @@ class RunCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'run {package?} {thing?} {arguments?*} {--fake}';
+    protected $signature = 'run {package?} {thing?} {arguments?*} {--bin=} {--fake} {--option=*}';
 
     /**
      * The console command description.
@@ -62,17 +62,18 @@ class RunCommand extends Command
         $binary = $this->selectBinary($package);
         $command = $this->argument('thing');
         $arguments = $this->argument('arguments');
+        $options = $this->option('option');
 
         if ($package->isInstalledLocally()) {
             $this->info('package is already installed locally. running...');
 
-            return $package->run($binary, $command, $arguments, Package::LOCALLY);
+            return $package->run($binary, $command, $arguments, $options, Package::LOCALLY);
         }
 
         if ($package->isInstalledGlobally()) {
             $this->info('package is already installed globally. running...');
 
-            return $package->run($binary, $command, $arguments, Package::GLOBALLY);
+            return $package->run($binary, $command, $arguments, $options, Package::GLOBALLY);
         }
 
         // TODO
@@ -97,7 +98,7 @@ class RunCommand extends Command
          * Run binary and save the return code for later.
          */
         $this->info('running binary...');
-        $return = $package->run($binary, $command, $arguments, Package::GLOBALLY);
+        $return = $package->run($binary, $command, $arguments, $options, Package::GLOBALLY);
 
         /**
          * If the user wants to keep the package installed, then return the return code.
@@ -120,8 +121,19 @@ class RunCommand extends Command
         return $return;
     }
 
-    protected function selectBinary(Package $package): string
+    public function selectBinary(Package $package): string
     {
+        if (
+            ($binary = $this->option('bin')) &&
+            collect($package->binaries())->contains($binary)
+        ) {
+            return $this->option('bin');
+        }
+
+        if (is_string($binary)) {
+            $this->warn("binary `{$binary}` not found in package.");
+        }
+
         $binary = is_string($package->binaries())
             ? $package->binaries()
             : select('select binary to run', $package->binaries());
