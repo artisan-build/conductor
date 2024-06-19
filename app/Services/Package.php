@@ -118,7 +118,7 @@ class Package
             self::GLOBALLY => 'composer global exec',
             self::LOCALLY => 'composer exec',
             default => throw new Exception('invalid context'),
-        })->append(" {$binary} {$command} {$arguments}");
+        })->append(" {$binary} {$command} {$arguments}")->toString();
         $result = Process::forever()->tty()->run($cmd);
 
         return $result->exitCode();
