@@ -35,6 +35,10 @@ To verify that conductor has been added to your global `$PATH`, run
 conductor
 ```
 
+#### Troubleshooting
+
+If global installation fails due to unresolvable dependencies, it probably means that your other global packages are out of date. Try running `composer global update`, then try installing again.
+
 ### Usage
 
 ```sh
