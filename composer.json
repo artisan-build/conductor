@@ -1,7 +1,7 @@
 {
     "name": "artisan-build/conductor",
     "description": "composer package executor.",
-    "keywords": ["composer", "conductor", "package", "laravel zero", "console", "cli"],
+    "keywords": ["composer", "conductor", "package", "laravel zero", "console", "cli", "dev", "artisan-build"],
     "homepage": "https://artisan.build/conductor",
     "type": "project",
     "license": "MIT",
