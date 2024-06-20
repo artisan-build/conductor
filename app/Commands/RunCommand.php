@@ -54,16 +54,12 @@ class RunCommand extends Command
         // check if conductor is latest version...
 
         if (! $this->argument('package')) {
-            $this->call(SummaryCommand::class);
-
-            return;
+            return $this->call(SummaryCommand::class);
         }
 
         $package = Package::fromName($this->argument('package'));
         if ($package instanceof Error) {
-            $this->error($package->message);
-
-            return self::FAILURE;
+            $this->fail($package->type.' error: '.$package->message);
         }
 
         $binary = $this->selectBinary($package);
