@@ -27,10 +27,22 @@ class Package
      */
     public static function fromName(string $name): self|Error
     {
-        $data = self::getPackageData($name);
         // validate package name formatting
+        if (! preg_match('/^[a-z0-9-_.]+\/[a-z0-9-_.]+$/', $name)) {
+            return new Error('invalid-name', 'Invalid package name.');
+        }
+
+        $data = self::getPackageData($name);
+
         // check package exists
+        if (isset($data['status']) && $data['status'] === 'error') {
+            return new Error('not-found', $data['message']);
+        }
+
         // check package has binaries
+        if (! isset(self::extractLatestData($data)['bin'])) {
+            return new Error('no-binary', 'Package has no binaries.');
+        }
 
         return new self($data);
     }
