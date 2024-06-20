@@ -36,9 +36,12 @@ class RunCommand extends Command
     /**
      * Execute the console command.
      */
-    public function handle()
+    public function handle(): int
     {
-        if ($this->option('keep') && $this->option('no-keep')) {
+        if (
+            $this->option('keep') === true &&
+            $this->option('no-keep') === true
+        ) {
             $this->fail('cannot use both --keep and --no-keep options.');
         }
 
