@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Conductor\Services;
 
-use Exception;
 use Conductor\Error;
+use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Process;
@@ -13,10 +13,13 @@ use Illuminate\Support\Facades\Process;
 class Package
 {
     const LOCALLY = 'local';
+
     const GLOBALLY = 'global';
+
     const DEV_KEYWORDS = ['dev', 'testing', 'static analysis'];
 
     public readonly string $name;
+
     public readonly array $latest_data;
 
     /**
@@ -119,7 +122,7 @@ class Package
             ->prepend('') // this will add `-- ` before the first option
             ->map(fn (string $option) => "--{$option}")
             ->implode(' ');
-        $cmd = str(match($context) {
+        $cmd = str(match ($context) {
             self::GLOBALLY => 'composer global exec',
             self::LOCALLY => 'composer exec',
             default => throw new Exception('invalid context'),

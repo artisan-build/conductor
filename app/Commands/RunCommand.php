@@ -91,6 +91,7 @@ class RunCommand extends Command
         $result = $package->installGlobally();
         if ($result !== 0) {
             $this->error('failed to install package globally.');
+
             return $result;
         }
 
@@ -114,6 +115,7 @@ class RunCommand extends Command
         $result = $package->uninstallGlobally();
         if ($result !== 0) {
             $this->error('failed to uninstall package globally.');
+
             return $result;
         }
 
