@@ -49,8 +49,8 @@ class Package
 
     public function __construct(public readonly array $data)
     {
-        $this->name = $data['package']['name'];
-        $this->latest_data = $this->latestData();
+        $this->name = $this->data['package']['name'];
+        $this->latest_data = $this->extractLatestData($this->data);
     }
 
     public static function getPackageData(string $name): array
@@ -61,9 +61,9 @@ class Package
         return $json;
     }
 
-    public function latestData(): array
+    public static function extractLatestData(array $data): array
     {
-        $versions = $this->data['package']['versions'];
+        $versions = $data['package']['versions'];
         $latest = $versions[array_keys($versions)[1]]; // [0] is `dev-master` or `dev-main`
 
         return $latest;
