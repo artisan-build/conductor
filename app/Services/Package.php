@@ -25,8 +25,12 @@ class Package
     /**
      * Create a package instance from a package name.
      */
-    public static function fromName(string $name): self|Error
+    public static function fromName(mixed $name): self|Error
     {
+        if (! is_string($name)) {
+            return new Error('invalid-name', 'Invalid package name.');
+        }
+
         // validate package name formatting
         if (! preg_match('/^[a-z0-9-_.]+\/[a-z0-9-_.]+$/', $name)) {
             return new Error('invalid-name', 'Invalid package name.');
