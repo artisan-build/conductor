@@ -112,7 +112,7 @@ class Package
         }
         $result = Process::forever()->tty()->run($cmd);
 
-        return $result->exitCode();
+        return $result->exitCode() ?? 0; // return 0 if exit code is null
     }
 
     public function uninstallGlobally(): int
@@ -123,7 +123,7 @@ class Package
         }
         $result = Process::forever()->tty()->run($cmd);
 
-        return $result->exitCode();
+        return $result->exitCode() ?? 0; // return 0 if exit code is null
     }
 
     public function run(
@@ -145,7 +145,7 @@ class Package
         })->append(" {$binary} {$command} {$arguments} {$options}")->toString();
         $result = Process::forever()->tty()->run($cmd);
 
-        return $result->exitCode();
+        return $result->exitCode() ?? 0; // return 0 if exit code is null
     }
 
     public function isLatestVersion(): bool
