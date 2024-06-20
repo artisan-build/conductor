@@ -45,7 +45,7 @@ class RunCommand extends Command
             $this->fail('cannot use both --keep and --no-keep options.');
         }
 
-        if ($this->option('fake')) {
+        if ($this->option('fake') === true) {
             $this->info('fake = true');
             $this->fake = true;
         }
@@ -53,7 +53,7 @@ class RunCommand extends Command
         // TODO
         // check if conductor is latest version...
 
-        if (! $this->argument('package')) {
+        if ($this->argument('package') === null) {
             return $this->call(SummaryCommand::class);
         }
 
