@@ -136,7 +136,7 @@ class Package
         $arguments = implode(' ', $arguments ?? []);
         $options = collect($options)
             ->prepend('') // this will add `-- ` before the first option
-            ->map(fn (string $option) => "--{$option}")
+            ->map(fn (string $option): string => "--{$option}")
             ->implode(' ');
         $cmd = str(match ($context) {
             self::GLOBALLY => 'composer global exec',
