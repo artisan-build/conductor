@@ -19,7 +19,7 @@ class RunCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'run {package?} {thing?} {arguments?*} {--bin=} {--fake} {--option=*}';
+    protected $signature = 'run {package?} {thing?} {arguments?*} {--bin=} {--keep} {--no-keep} {--fake} {--option=*}';
 
     /**
      * The console command description.
@@ -38,6 +38,10 @@ class RunCommand extends Command
      */
     public function handle()
     {
+        if ($this->option('keep') && $this->option('no-keep')) {
+            $this->fail('cannot use both --keep and --no-keep options.');
+        }
+
         if ($this->option('fake')) {
             $this->info('fake = true');
             $this->fake = true;
@@ -79,10 +83,14 @@ class RunCommand extends Command
         // TODO
         // $this->info('update globally installed package?..');
 
-        $should_keep_package_installed = $this->confirm(
-            question: 'keep package installed after running?..',
-            default: true,
-        );
+        $should_keep_package_installed = match (true) {
+            $this->option('keep') => true,
+            $this->option('no-keep') => false,
+            default => $this->confirm(
+                question: 'keep package installed after running?..',
+                default: true,
+            ),
+        };
 
         /**
          * Install package globally.
